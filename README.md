@@ -1,123 +1,100 @@
-🎮 Tic-Tac-Toe Game
+🎮 Tic-Tac-Toe (Web Game)
 
-A simple browser-based Tic-Tac-Toe game built using HTML, CSS, and JavaScript.
-Two players take turns marking X and O on a 3×3 grid. The game detects wins, draws, and highlights the winning combination.
+A simple Tic-Tac-Toe game built with HTML, CSS, and JavaScript.
+Two players take turns placing X and O on a 3×3 board. The game automatically detects winning combinations, highlights the winning cells, and allows players to restart the game.
+
+This project demonstrates DOM manipulation, event handling, and basic game logic in JavaScript. These types of projects are commonly used by beginners to practice core web development concepts.
+
+🚀 Live Demo
+
+To play the game locally:
+
+Clone the repository
+
+git clone https://github.com/osemeedeoghon/Tic-Tac-Toe.git
+
+Open the project folder
+
+Open index.html in your browser
+
+No installation or dependencies are required.
 
 📌 Features
 
-Interactive 3×3 game board
-
-Two-player gameplay (Player X and Player O)
-
-Automatic win detection
-
-Draw detection
-
-Winning cells highlight
-
-Game restart button
-
-Clean and responsive UI
+✅ Two-player gameplay (Player X vs Player O)
+✅ Interactive 3×3 grid
+✅ Automatic win detection
+✅ Draw detection when board is full
+✅ Winning cells are highlighted
+✅ Restart Game button
+✅ Clean and simple UI
 
 🛠️ Technologies Used
 
-HTML5 – Game structure
+HTML5 – structure of the game
 
-CSS3 – Styling and layout
+CSS3 – styling and layout
 
-JavaScript (Vanilla) – Game logic and interactivity
+JavaScript (Vanilla) – game logic and interactivity
 
 📂 Project Structure
-tic-tac-toe/
+Tic-Tac-Toe
 │
-├── index.html     # Game layout and board structure
-├── style.css      # Game styling and UI
-├── script.js      # Game logic and functionality
-└── README.md      # Project documentation
-▶️ How to Run the Game
-
-Clone the repository:
-
-git clone https://github.com/yourusername/tic-tac-toe.git
-
-Open the project folder.
-
-Open index.html in your browser.
-
-That's it! 🎉 You can now play the game.
-
+├── index.html   # Game layout and board
+├── style.css    # Game styling
+├── script.js    # Game logic
+└── README.md    # Project documentation
 🎯 How to Play
 
 Player X starts the game.
 
-Players take turns clicking an empty square.
+Players take turns clicking on an empty square.
 
-The first player to get three marks in a row (horizontal, vertical, or diagonal) wins.
+The first player to get three in a row (horizontal, vertical, or diagonal) wins.
 
 If all cells are filled and no player wins, the game ends in a draw.
 
-Click the Restart Game button to play again.
+Click Restart Game to start a new match.
 
-🧠 Game Logic Overview
+🧠 Game Logic
 
 The game uses:
 
-An array representing the board state
+A JavaScript array to represent the board state
 
-Winning combinations to check for victory
+Predefined winning combinations
 
-Event listeners to detect player moves
+Event listeners to track player clicks
 
 Functions to:
 
-Handle player turns
+Update the board
+
+Switch players
 
 Detect winners
 
 Detect draws
 
-Highlight winning cells
-
 Restart the game
 
-🖼️ Screenshot
+🔮 Future Improvements
 
-Example gameplay interface:
+Possible enhancements for the project:
 
-X | O | X
----------
-O | X |  
----------
-O |   | X
-
-Winning combinations are highlighted in green.
-
-🚀 Future Improvements
-
-Possible enhancements:
-
-Add AI opponent
+Add a computer AI opponent
 
 Add score tracking
 
-Add sound effects
+Improve mobile responsiveness
 
-Add animations
+Add animations or sound effects
 
-Make the game mobile responsive
-
-Implement online multiplayer
+Deploy a live version using GitHub Pages
 
 📜 License
 
-This project is open-source and available under the MIT License.
+This project is open source and available for learning and educational purposes.
 
-If you want, I can also help you add things that make GitHub repos look more professional, like:
-
-🖼 real screenshots
-
-🎥 GIF gameplay demo
-
-⭐ GitHub badges
-
-🚀 live playable version using GitHub Pages.
+👤 Author
+Oseme Edeoghon
