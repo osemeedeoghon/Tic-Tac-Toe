@@ -15,6 +15,10 @@ const winningCombinations = [
 const messageElement = document.getElementById('message');
 const cells = document.querySelectorAll('.cell');
 const restartButton = document.getElementById('restart');
+let difficultyDisplay = null;
+if (document.getElementById('difficulty')) {
+    difficultyDisplay = document.getElementById('difficulty');
+}
 
 // -------------------------
 // Event Handlers
@@ -111,9 +115,8 @@ function computerMove() {
 
     // Level 1: random
     if (difficultyLevel === 1) {
-        let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-        gameBoard[randomIndex] = 'O';
-        cells[randomIndex].textContent = 'O';
+        const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        placeMove(randomIndex);
         return;
     }
 
@@ -122,15 +125,12 @@ function computerMove() {
         for (let index of emptyCells) {
             gameBoard[index] = 'X';
             if (checkWinner()) {
-                gameBoard[index] = 'O';
-                cells[index].textContent = 'O';
+                placeMove(index);
                 return;
             }
             gameBoard[index] = '';
         }
-        let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-        gameBoard[randomIndex] = 'O';
-        cells[randomIndex].textContent = 'O';
+        placeMove(emptyCells[Math.floor(Math.random() * emptyCells.length)]);
         return;
     }
 
@@ -140,7 +140,7 @@ function computerMove() {
         for (let index of emptyCells) {
             gameBoard[index] = 'O';
             if (checkWinner()) {
-                cells[index].textContent = 'O';
+                placeMove(index);
                 return;
             }
             gameBoard[index] = '';
@@ -149,23 +149,48 @@ function computerMove() {
         for (let index of emptyCells) {
             gameBoard[index] = 'X';
             if (checkWinner()) {
-                gameBoard[index] = 'O';
-                cells[index].textContent = 'O';
+                placeMove(index);
                 return;
             }
             gameBoard[index] = '';
         }
         // Otherwise random
-        let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-        gameBoard[randomIndex] = 'O';
-        cells[randomIndex].textContent = 'O';
+        placeMove(emptyCells[Math.floor(Math.random() * emptyCells.length)]);
         return;
     }
 
     // Level 5+: Minimax (unbeatable)
-    let bestMove = minimax(gameBoard, 'O').index;
-    gameBoard[bestMove] = 'O';
-    cells[bestMove].textContent = 'O';
+    if (difficultyLevel === 5) {
+        const bestMove = minimax(gameBoard, 'O').index;
+        placeMove(bestMove);
+        return;
+    }
+
+    // Level 6+: Psychological difficulty
+    if (difficultyLevel >= 6) {
+        // Shuffle empty cells so Minimax picks less intuitive spots first
+        const shuffled = shuffleArray(emptyCells);
+        let bestScore = -Infinity;
+        let bestMove = shuffled[0];
+
+        for (let index of shuffled) {
+            gameBoard[index] = 'O';
+            const score = minimaxScore(gameBoard, 'X');
+            gameBoard[index] = '';
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = index;
+            }
+        }
+        placeMove(bestMove);
+        return;
+    }
+}
+
+// Helper to place a move
+function placeMove(index) {
+    gameBoard[index] = 'O';
+    cells[index].textContent = 'O';
 }
 
 // -------------------------
@@ -219,6 +244,13 @@ function minimax(newBoard, player) {
     return moves[bestMove];
 }
 
+// Quick Minimax score (used for psychological difficulty)
+function minimaxScore(board, player) {
+    if (checkWinnerStatic(board, 'O')) return 10;
+    if (checkWinnerStatic(board, 'X')) return -10;
+    return 0; // draw or undecided
+}
+
 // Static checkWinner for minimax (does not affect main board)
 function checkWinnerStatic(board, player) {
     for (let [a,b,c] of winningCombinations) {
@@ -227,6 +259,16 @@ function checkWinnerStatic(board, player) {
             board[a] === board[c]) return true;
     }
     return false;
+}
+
+// Shuffle array helper (for psychological difficulty)
+function shuffleArray(array) {
+    const arr = array.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
 }
 
 // -------------------------
@@ -243,8 +285,11 @@ function restartGame() {
         cell.classList.remove('winning');
     });
 
-    // Increase difficulty each restart (max 5)
-    if (difficultyLevel < 5) difficultyLevel++;
+    // Increase difficulty each restart
+    if (difficultyLevel < 7) difficultyLevel++; // max level 7+
+    if (difficultyDisplay) {
+        difficultyDisplay.textContent = `Difficulty: ${difficultyLevel}`;
+    }
     console.log("Difficulty level:", difficultyLevel);
 }
 
