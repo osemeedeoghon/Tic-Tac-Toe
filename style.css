@@ -1,69 +1,115 @@
+/* -------------------------------
+   Body & Container
+-------------------------------- */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Comic Sans MS', 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #ff9a9e, #fad0c4);
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
-    background-color: #f0f0f0;
 }
 
 .container {
     text-align: center;
+    background: #ffffffdd; /* slightly transparent white */
+    padding: 30px 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
 
+/* -------------------------------
+   Heading
+-------------------------------- */
 h1 {
+    font-size: 48px;
     margin-bottom: 20px;
-    color: #333;
+    color: #ff5f6d;
+    text-shadow: 2px 2px #ffe0e0;
 }
 
+/* -------------------------------
+   Message
+-------------------------------- */
 #message {
     font-size: 24px;
     margin-bottom: 20px;
-    color: #555;
+    color: #333;
+    font-weight: bold;
 }
 
+/* -------------------------------
+   Board Grid
+-------------------------------- */
 .board {
     display: grid;
     grid-template-columns: repeat(3, 100px);
     grid-template-rows: repeat(3, 100px);
-    gap: 5px;
-    margin-bottom: 20px;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 25px;
 }
 
 .cell {
     width: 100px;
     height: 100px;
-    background-color: #fff;
-    border: 2px solid #333;
+    background-color: #ffe8d6;
+    border-radius: 15px;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 48px;
     font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: transform 0.2s, background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.1);
 }
 
 .cell:hover {
-    background-color: #e0e0e0;
+    transform: scale(1.1);
+    background-color: #ffd2a6;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
 }
 
 .cell.winning {
     background-color: #90ee90;
+    animation: pulse 0.5s infinite alternate;
 }
 
+/* Pulse animation for winning cells */
+@keyframes pulse {
+    0% { transform: scale(1.05); }
+    100% { transform: scale(1.15); }
+}
+
+/* -------------------------------
+   Restart Button
+-------------------------------- */
 #restart {
-    padding: 10px 20px;
-    font-size: 18px;
-    background-color: #4CAF50;
-    color: white;
+    padding: 12px 25px;
+    font-size: 20px;
+    font-weight: bold;
+    background: linear-gradient(45deg, #ff6a00, #ee0979);
+    color: #fff;
     border: none;
-    border-radius: 5px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: transform 0.2s, box-shadow 0.3s;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
 #restart:hover {
-    background-color: #45a049;
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+/* -------------------------------
+   Optional Difficulty Display
+-------------------------------- */
+#difficulty {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #ff4500;
 }
