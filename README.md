@@ -1,94 +1,79 @@
 🎮 Tic-Tac-Toe (Web Game)
 
-A simple Tic-Tac-Toe game built with HTML, CSS, and JavaScript.
-Two players take turns placing X and O on a 3×3 board. The game automatically detects winning combinations, highlights the winning cells, and allows players to restart the game.
+A polished Tic-Tac-Toe game built with plain HTML, CSS, and JavaScript — no frameworks, no build step.
+Play against a computer opponent on four difficulty levels, or pass the device to a friend for local two-player games.
 
-This project demonstrates DOM manipulation, event handling, and basic game logic in JavaScript. These types of projects are commonly used by beginners to practice core web development concepts.
-
-🚀 Live Demo
-
-To play the game locally:
+🚀 Play Locally
 
 Clone the repository
 
-git clone https://github.com/osemeedeoghon/Tic-Tac-Toe.git
+git clone https://github.com/osemeedeoghon/tic-tac-toe.git
 
-Open the project folder
-
-Open index.html in your browser
-
-No installation or dependencies are required.
+Open index.html in your browser — no installation or dependencies required.
 
 📌 Features
 
-✅ Two-player gameplay (Player X vs Player O)
-✅ Interactive 3×3 grid
-✅ Automatic win detection
-✅ Draw detection when board is full
-✅ Winning cells are highlighted
-✅ Restart Game button
-✅ Clean and simple UI
+✅ vs Computer mode with Easy, Medium, Hard and Unbeatable (minimax) difficulty
+✅ Local two-player mode
+✅ Scoreboard for wins and draws, saved between visits
+✅ First move alternates each round
+✅ Animated moves, winning-line strike-through and turn indicator
+✅ Hover preview of the mark you're about to place
+✅ Keyboard play: arrow keys to move, Enter/Space to place, R for a new round
+✅ Screen-reader friendly (labelled cells, live status updates)
+✅ Responsive layout for phones, tablets and desktops; respects reduced-motion settings
 
 🛠️ Technologies Used
 
 HTML5 – structure of the game
 
-CSS3 – styling and layout
+CSS3 – styling, layout and animations
 
 JavaScript (Vanilla) – game logic and interactivity
 
 📂 Project Structure
 Tic-Tac-Toe
 │
-├── index.html   # Game layout and board
-├── style.css    # Game styling
-├── script.js    # Game logic
-└── README.md    # Project documentation
+├── index.html          # Game layout and board
+├── style.css           # Game styling
+├── game.js             # Pure game rules and computer AI (no DOM)
+├── script.js           # UI, input handling and game flow
+├── tests/game.test.js  # Unit tests for the game logic
+└── README.md           # Project documentation
+
 🎯 How to Play
 
-Player X starts the game.
+Choose vs Computer or 2 Players (and a difficulty when playing the computer).
 
-Players take turns clicking on an empty square.
+Players take turns placing X and O on an empty square.
 
 The first player to get three in a row (horizontal, vertical, or diagonal) wins.
 
 If all cells are filled and no player wins, the game ends in a draw.
 
-Click Restart Game to start a new match.
+Click New Round to play again — the other player opens next.
 
-🧠 Game Logic
+🧠 Difficulty Levels
 
-The game uses:
+Easy – plays random moves
 
-A JavaScript array to represent the board state
+Medium – takes a winning move, otherwise blocks yours
 
-Predefined winning combinations
+Hard – plays perfectly most of the time, with the occasional slip
 
-Event listeners to track player clicks
+Unbeatable – full minimax search; the best you can do is draw
 
-Functions to:
+🧪 Running Tests
 
-Update the board
+The game logic is covered by tests that use Node's built-in test runner (Node 18+, no packages needed):
 
-Switch players
-
-Detect winners
-
-Detect draws
-
-Restart the game
+node --test
 
 🔮 Future Improvements
 
-Possible enhancements for the project:
+Sound effects
 
-Add a computer AI opponent
-
-Add score tracking
-
-Improve mobile responsiveness
-
-Add animations or sound effects
+Online multiplayer
 
 Deploy a live version using GitHub Pages
 
