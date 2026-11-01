@@ -2,49 +2,82 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#14172b">
+<meta name="description" content="Tic Tac Toe — play against the computer on four difficulty levels or with a friend.">
 <title>Tic Tac Toe</title>
-
-<!-- Auto-versioned CSS -->
-<script>
-  const cssVersion = new Date().getTime(); // unique timestamp
-  const link = document.createElement('link');
-  link.rel = "stylesheet";
-  link.href = `style.css?v=${cssVersion}`;
-  document.head.appendChild(link);
-</script>
-
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2314172b'/%3E%3Cpath d='M22 22l22 22M44 22L22 44' stroke='%23ff5c7a' stroke-width='9' stroke-linecap='round'/%3E%3Ccircle cx='67' cy='67' r='13' fill='none' stroke='%2333e1d0' stroke-width='9'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="container">
-  <h1>Tic Tac Toe</h1>
+<main class="container">
+  <header class="header">
+    <h1>Tic <span class="accent-x">Tac</span> <span class="accent-o">Toe</span></h1>
 
-  <div id="message">Your turn</div>
+    <div class="controls">
+      <div class="segmented" role="radiogroup" aria-label="Game mode">
+        <button type="button" class="segment" role="radio" data-mode="cpu" aria-checked="true">vs Computer</button>
+        <button type="button" class="segment" role="radio" data-mode="pvp" aria-checked="false">2 Players</button>
+      </div>
 
-  <div class="board">
-    <div class="cell" data-index="0"></div>
-    <div class="cell" data-index="1"></div>
-    <div class="cell" data-index="2"></div>
-    <div class="cell" data-index="3"></div>
-    <div class="cell" data-index="4"></div>
-    <div class="cell" data-index="5"></div>
-    <div class="cell" data-index="6"></div>
-    <div class="cell" data-index="7"></div>
-    <div class="cell" data-index="8"></div>
+      <label class="difficulty" id="difficulty-control">
+        <span class="visually-hidden">Difficulty</span>
+        <select id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+          <option value="unbeatable">Unbeatable</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <section class="scoreboard" aria-label="Score">
+    <div class="score score-x" data-player="X">
+      <span class="score-label" id="label-x">You</span>
+      <span class="score-value" id="score-x">0</span>
+    </div>
+    <div class="score score-draw">
+      <span class="score-label">Draws</span>
+      <span class="score-value" id="score-draw">0</span>
+    </div>
+    <div class="score score-o" data-player="O">
+      <span class="score-label" id="label-o">Computer</span>
+      <span class="score-value" id="score-o">0</span>
+    </div>
+  </section>
+
+  <div id="message" class="message" role="status" aria-live="polite">Your turn</div>
+
+  <div class="board-wrap">
+    <div class="board" id="board" role="group" aria-label="Tic Tac Toe board">
+      <button type="button" class="cell" data-index="0" aria-label="Row 1, column 1, empty"></button>
+      <button type="button" class="cell" data-index="1" aria-label="Row 1, column 2, empty"></button>
+      <button type="button" class="cell" data-index="2" aria-label="Row 1, column 3, empty"></button>
+      <button type="button" class="cell" data-index="3" aria-label="Row 2, column 1, empty"></button>
+      <button type="button" class="cell" data-index="4" aria-label="Row 2, column 2, empty"></button>
+      <button type="button" class="cell" data-index="5" aria-label="Row 2, column 3, empty"></button>
+      <button type="button" class="cell" data-index="6" aria-label="Row 3, column 1, empty"></button>
+      <button type="button" class="cell" data-index="7" aria-label="Row 3, column 2, empty"></button>
+      <button type="button" class="cell" data-index="8" aria-label="Row 3, column 3, empty"></button>
+    </div>
+    <svg class="win-line" viewBox="0 0 300 300" aria-hidden="true">
+      <line id="win-line" x1="0" y1="0" x2="0" y2="0" />
+    </svg>
   </div>
 
-  <button id="restart">Restart Game</button>
-</div>
+  <div class="actions">
+    <button type="button" id="restart" class="btn btn-primary">New Round</button>
+    <button type="button" id="reset-scores" class="btn btn-ghost">Reset Scores</button>
+  </div>
 
-<!-- Auto-versioned JS -->
-<script>
-  const jsVersion = new Date().getTime();
-  const script = document.createElement('script');
-  script.src = `script.js?v=${jsVersion}`;
-  document.head.appendChild(script);
-</script>
+  <p class="hint">First move alternates each round · Use arrow keys to move, Enter to play</p>
+</main>
+
+<script src="game.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>

@@ -1,300 +1,317 @@
 // -------------------------
 // Game state variables
 // -------------------------
-let currentPlayer = 'X';
-let gameBoard = ['', '', '', '', '', '', '', '', ''];
-let gameActive = true;
-let difficultyLevel = 1; // starts easy
+const { createBoard, getWinner, isDraw, chooseMove, otherPlayer, DIFFICULTIES } = window.TicTacToe;
 
-const winningCombinations = [
-    [0,1,2],[3,4,5],[6,7,8],
-    [0,3,6],[1,4,7],[2,5,8],
-    [0,4,8],[2,4,6]
-];
+const HUMAN = 'X';
+const COMPUTER = 'O';
+const COMPUTER_DELAY = 450; // ms — long enough to feel like a turn, short enough not to drag
+const STORAGE_KEY = 'tictactoe:v2';
+
+let gameBoard = createBoard();
+let currentPlayer = 'X';
+let startingPlayer = 'X';
+let gameActive = true;
+let computerTimer = null;
+let mode = 'cpu';             // 'cpu' | 'pvp'
+let difficulty = 'medium';
+let scores = { cpu: { X: 0, O: 0, draw: 0 }, pvp: { X: 0, O: 0, draw: 0 } };
 
 const messageElement = document.getElementById('message');
+const boardElement = document.getElementById('board');
 const cells = document.querySelectorAll('.cell');
 const restartButton = document.getElementById('restart');
-let difficultyDisplay = null;
-if (document.getElementById('difficulty')) {
-    difficultyDisplay = document.getElementById('difficulty');
+const resetScoresButton = document.getElementById('reset-scores');
+const difficultySelect = document.getElementById('difficulty');
+const difficultyControl = document.getElementById('difficulty-control');
+const modeButtons = document.querySelectorAll('.segment');
+const winLine = document.getElementById('win-line');
+const scoreElements = {
+    X: document.getElementById('score-x'),
+    O: document.getElementById('score-o'),
+    draw: document.getElementById('score-draw')
+};
+const scoreCards = {
+    X: document.querySelector('.score-x'),
+    O: document.querySelector('.score-o')
+};
+const labelX = document.getElementById('label-x');
+const labelO = document.getElementById('label-o');
+
+// -------------------------
+// Persistence (best effort — private mode may block storage)
+// -------------------------
+function loadState() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved) return;
+        if (saved.mode === 'cpu' || saved.mode === 'pvp') mode = saved.mode;
+        if (DIFFICULTIES[saved.difficulty]) difficulty = saved.difficulty;
+        if (saved.scores) {
+            for (const key of ['cpu', 'pvp']) {
+                if (saved.scores[key]) scores[key] = { ...scores[key], ...saved.scores[key] };
+            }
+        }
+    } catch (error) {
+        // Ignore corrupt or unavailable storage
+    }
+}
+
+function saveState() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ mode, difficulty, scores }));
+    } catch (error) {
+        // Storage unavailable — scores just won't persist
+    }
+}
+
+// -------------------------
+// Rendering
+// -------------------------
+function playerName(player) {
+    if (mode === 'cpu') return player === HUMAN ? 'You' : 'Computer';
+    return `Player ${player}`;
+}
+
+function setMessage(text, tone = '') {
+    messageElement.textContent = text;
+    messageElement.dataset.tone = tone;
+}
+
+function updateTurnMessage() {
+    if (mode === 'cpu') {
+        setMessage(currentPlayer === HUMAN ? 'Your turn' : 'Computer is thinking…', currentPlayer.toLowerCase());
+    } else {
+        setMessage(`Player ${currentPlayer}'s turn`, currentPlayer.toLowerCase());
+    }
+}
+
+function renderScores() {
+    const current = scores[mode];
+    scoreElements.X.textContent = current.X;
+    scoreElements.O.textContent = current.O;
+    scoreElements.draw.textContent = current.draw;
+    labelX.textContent = mode === 'cpu' ? 'You (X)' : 'Player X';
+    labelO.textContent = mode === 'cpu' ? 'Computer (O)' : 'Player O';
+}
+
+function renderTurnIndicator() {
+    scoreCards.X.classList.toggle('active', gameActive && currentPlayer === 'X');
+    scoreCards.O.classList.toggle('active', gameActive && currentPlayer === 'O');
+    boardElement.dataset.turn = currentPlayer.toLowerCase();
+    const locked = !gameActive || (mode === 'cpu' && currentPlayer === COMPUTER);
+    boardElement.classList.toggle('locked', locked);
+}
+
+function renderControls() {
+    modeButtons.forEach(button => {
+        button.setAttribute('aria-checked', String(button.dataset.mode === mode));
+    });
+    difficultySelect.value = difficulty;
+    difficultyControl.hidden = mode !== 'cpu';
+}
+
+function cellLabel(index) {
+    const row = Math.floor(index / 3) + 1;
+    const col = (index % 3) + 1;
+    return `Row ${row}, column ${col}, ${gameBoard[index] || 'empty'}`;
+}
+
+function renderCell(index) {
+    const cell = cells[index];
+    const value = gameBoard[index];
+    cell.textContent = value;
+    cell.classList.toggle('x', value === 'X');
+    cell.classList.toggle('o', value === 'O');
+    cell.setAttribute('aria-label', cellLabel(index));
+    cell.setAttribute('aria-disabled', String(value !== '' || !gameActive));
+}
+
+function renderBoard() {
+    cells.forEach((cell, index) => renderCell(index));
+}
+
+function showWinLine(line, winner) {
+    const center = i => ({ x: (i % 3) * 100 + 50, y: Math.floor(i / 3) * 100 + 50 });
+    const start = center(line[0]);
+    const end = center(line[2]);
+    // Extend slightly past the outer cell centres
+    const dx = (end.x - start.x) * 0.18;
+    const dy = (end.y - start.y) * 0.18;
+    winLine.setAttribute('x1', start.x - dx);
+    winLine.setAttribute('y1', start.y - dy);
+    winLine.setAttribute('x2', end.x + dx);
+    winLine.setAttribute('y2', end.y + dy);
+    winLine.dataset.player = winner.toLowerCase();
+    winLine.classList.remove('visible');
+    void winLine.getBoundingClientRect(); // restart the draw animation
+    winLine.classList.add('visible');
+}
+
+// -------------------------
+// Game flow
+// -------------------------
+function placeMove(index, player) {
+    gameBoard[index] = player;
+    renderCell(index);
+    cells[index].classList.add('placed');
+}
+
+function finishTurn() {
+    const result = getWinner(gameBoard);
+    if (result) {
+        gameActive = false;
+        scores[mode][result.winner]++;
+        result.line.forEach(i => cells[i].classList.add('winning'));
+        boardElement.classList.add('game-over');
+        showWinLine(result.line, result.winner);
+        if (mode === 'cpu') {
+            setMessage(result.winner === HUMAN ? 'You win! 🎉' : 'Computer wins!', result.winner.toLowerCase());
+        } else {
+            setMessage(`Player ${result.winner} wins! 🎉`, result.winner.toLowerCase());
+        }
+        endRound();
+        return;
+    }
+
+    if (isDraw(gameBoard)) {
+        gameActive = false;
+        scores[mode].draw++;
+        boardElement.classList.add('game-over');
+        setMessage("It's a draw!", 'draw');
+        endRound();
+        return;
+    }
+
+    currentPlayer = otherPlayer(currentPlayer);
+    updateTurnMessage();
+    renderTurnIndicator();
+    if (mode === 'cpu' && currentPlayer === COMPUTER) scheduleComputerMove();
+}
+
+function endRound() {
+    saveState();
+    renderScores();
+    renderBoard();
+    renderTurnIndicator();
+    restartButton.classList.add('pulse');
+}
+
+function scheduleComputerMove() {
+    clearTimeout(computerTimer);
+    computerTimer = setTimeout(() => {
+        computerTimer = null;
+        if (!gameActive || currentPlayer !== COMPUTER) return;
+        const index = chooseMove(gameBoard, COMPUTER, difficulty);
+        if (index === -1) return;
+        placeMove(index, COMPUTER);
+        finishTurn();
+    }, COMPUTER_DELAY);
 }
 
 // -------------------------
 // Event Handlers
 // -------------------------
 function handleCellClick(event) {
-    const cell = event.target;
-    const index = parseInt(cell.getAttribute('data-index'));
+    const cell = event.currentTarget;
+    const index = Number(cell.dataset.index);
 
-    if (gameBoard[index] !== '' || !gameActive) return;
+    if (!gameActive || gameBoard[index] !== '') return;
+    if (mode === 'cpu' && currentPlayer !== HUMAN) return;
 
-    gameBoard[index] = currentPlayer;
-    cell.textContent = currentPlayer;
-
-    if (checkWinner()) {
-        messageElement.textContent = `Player ${currentPlayer} wins!`;
-        highlightWinningCells();
-        gameActive = false;
-        return;
-    }
-
-    if (checkDraw()) {
-        messageElement.textContent = "It's a draw!";
-        gameActive = false;
-        return;
-    }
-
-    gameActive = false;
-    messageElement.textContent = "Computer is thinking...";
-
-    setTimeout(() => {
-        computerMove();
-
-        if (checkWinner()) {
-            messageElement.textContent = "Computer wins!";
-            highlightWinningCells();
-            gameActive = false;
-            return;
-        }
-
-        if (checkDraw()) {
-            messageElement.textContent = "It's a draw!";
-            gameActive = false;
-            return;
-        }
-
-        gameActive = true;
-        messageElement.textContent = "Your turn";
-
-    }, 300);
+    placeMove(index, currentPlayer);
+    finishTurn();
 }
 
-// -------------------------
-// Check win/draw
-// -------------------------
-function checkWinner() {
-    for (let combination of winningCombinations) {
-        const [a,b,c] = combination;
-        if (gameBoard[a] &&
-            gameBoard[a] === gameBoard[b] &&
-            gameBoard[a] === gameBoard[c]) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function checkDraw() {
-    return gameBoard.every(cell => cell !== '');
-}
-
-function highlightWinningCells() {
-    for (let combination of winningCombinations) {
-        const [a,b,c] = combination;
-        if (gameBoard[a] &&
-            gameBoard[a] === gameBoard[b] &&
-            gameBoard[a] === gameBoard[c]) {
-            cells[a].classList.add('winning');
-            cells[b].classList.add('winning');
-            cells[c].classList.add('winning');
-            break;
-        }
-    }
-}
-
-// -------------------------
-// Computer Move
-// -------------------------
-function computerMove() {
-    let emptyCells = gameBoard
-        .map((val,index)=> val === '' ? index : null)
-        .filter(val => val !== null);
-
-    if (emptyCells.length === 0) return;
-
-    // Level 1: random
-    if (difficultyLevel === 1) {
-        const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-        placeMove(randomIndex);
-        return;
-    }
-
-    // Level 2: block player
-    if (difficultyLevel === 2) {
-        for (let index of emptyCells) {
-            gameBoard[index] = 'X';
-            if (checkWinner()) {
-                placeMove(index);
-                return;
-            }
-            gameBoard[index] = '';
-        }
-        placeMove(emptyCells[Math.floor(Math.random() * emptyCells.length)]);
-        return;
-    }
-
-    // Level 3-4: try to win + block
-    if (difficultyLevel === 3 || difficultyLevel === 4) {
-        // Try to win
-        for (let index of emptyCells) {
-            gameBoard[index] = 'O';
-            if (checkWinner()) {
-                placeMove(index);
-                return;
-            }
-            gameBoard[index] = '';
-        }
-        // Block player
-        for (let index of emptyCells) {
-            gameBoard[index] = 'X';
-            if (checkWinner()) {
-                placeMove(index);
-                return;
-            }
-            gameBoard[index] = '';
-        }
-        // Otherwise random
-        placeMove(emptyCells[Math.floor(Math.random() * emptyCells.length)]);
-        return;
-    }
-
-    // Level 5+: Minimax (unbeatable)
-    if (difficultyLevel === 5) {
-        const bestMove = minimax(gameBoard, 'O').index;
-        placeMove(bestMove);
-        return;
-    }
-
-    // Level 6+: Psychological difficulty
-    if (difficultyLevel >= 6) {
-        // Shuffle empty cells so Minimax picks less intuitive spots first
-        const shuffled = shuffleArray(emptyCells);
-        let bestScore = -Infinity;
-        let bestMove = shuffled[0];
-
-        for (let index of shuffled) {
-            gameBoard[index] = 'O';
-            const score = minimaxScore(gameBoard, 'X');
-            gameBoard[index] = '';
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = index;
-            }
-        }
-        placeMove(bestMove);
-        return;
-    }
-}
-
-// Helper to place a move
-function placeMove(index) {
-    gameBoard[index] = 'O';
-    cells[index].textContent = 'O';
-}
-
-// -------------------------
-// Minimax Algorithm
-// -------------------------
-function minimax(newBoard, player) {
-    const availSpots = newBoard.map((v,i)=> v===''?i:null).filter(v=>v!==null);
-
-    if (checkWinnerStatic(newBoard, 'X')) return {score: -10};
-    if (checkWinnerStatic(newBoard, 'O')) return {score: 10};
-    if (availSpots.length === 0) return {score: 0};
-
-    let moves = [];
-
-    for (let i = 0; i < availSpots.length; i++) {
-        let move = {};
-        move.index = availSpots[i];
-        newBoard[availSpots[i]] = player;
-
-        if (player === 'O') {
-            let result = minimax(newBoard, 'X');
-            move.score = result.score;
-        } else {
-            let result = minimax(newBoard, 'O');
-            move.score = result.score;
-        }
-
-        newBoard[availSpots[i]] = '';
-        moves.push(move);
-    }
-
-    let bestMove;
-    if (player === 'O') {
-        let bestScore = -Infinity;
-        for (let i = 0; i < moves.length; i++) {
-            if (moves[i].score > bestScore) {
-                bestScore = moves[i].score;
-                bestMove = i;
-            }
-        }
-    } else {
-        let bestScore = Infinity;
-        for (let i = 0; i < moves.length; i++) {
-            if (moves[i].score < bestScore) {
-                bestScore = moves[i].score;
-                bestMove = i;
-            }
-        }
-    }
-
-    return moves[bestMove];
-}
-
-// Quick Minimax score (used for psychological difficulty)
-function minimaxScore(board, player) {
-    if (checkWinnerStatic(board, 'O')) return 10;
-    if (checkWinnerStatic(board, 'X')) return -10;
-    return 0; // draw or undecided
-}
-
-// Static checkWinner for minimax (does not affect main board)
-function checkWinnerStatic(board, player) {
-    for (let [a,b,c] of winningCombinations) {
-        if (board[a] === player &&
-            board[a] === board[b] &&
-            board[a] === board[c]) return true;
-    }
-    return false;
-}
-
-// Shuffle array helper (for psychological difficulty)
-function shuffleArray(array) {
-    const arr = array.slice();
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
+function handleBoardKeydown(event) {
+    const moves = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -3, ArrowDown: 3 };
+    if (!(event.key in moves)) return;
+    const current = Number(document.activeElement.dataset.index);
+    if (Number.isNaN(current)) return;
+    event.preventDefault();
+    let next = current + moves[event.key];
+    // Wrap within the row / column instead of jumping rows
+    if (event.key === 'ArrowLeft' && current % 3 === 0) next = current + 2;
+    if (event.key === 'ArrowRight' && current % 3 === 2) next = current - 2;
+    if (next < 0) next += 9;
+    if (next > 8) next -= 9;
+    cells[next].focus();
 }
 
 // -------------------------
 // Restart Game
 // -------------------------
 function restartGame() {
-    gameBoard = ['', '', '', '', '', '', '', '', ''];
+    clearTimeout(computerTimer);
+    computerTimer = null;
+
+    gameBoard = createBoard();
     gameActive = true;
-    currentPlayer = 'X';
-    messageElement.textContent = "Your turn";
+    // Alternate who opens each round so neither side always has the advantage
+    startingPlayer = otherPlayer(startingPlayer);
+    currentPlayer = startingPlayer;
 
-    cells.forEach(cell => {
-        cell.textContent = '';
-        cell.classList.remove('winning');
-    });
+    cells.forEach(cell => cell.classList.remove('winning', 'placed'));
+    boardElement.classList.remove('game-over');
+    winLine.classList.remove('visible');
+    restartButton.classList.remove('pulse');
 
-    // Increase difficulty each restart
-    if (difficultyLevel < 7) difficultyLevel++; // max level 7+
-    if (difficultyDisplay) {
-        difficultyDisplay.textContent = `Difficulty: ${difficultyLevel}`;
-    }
-    console.log("Difficulty level:", difficultyLevel);
+    renderBoard();
+    updateTurnMessage();
+    renderTurnIndicator();
+    if (mode === 'cpu' && currentPlayer === COMPUTER) scheduleComputerMove();
+}
+
+// Settings changes start a fresh round with X opening
+function startFresh() {
+    startingPlayer = 'O'; // restartGame flips this to X
+    restartGame();
+}
+
+function setMode(newMode) {
+    if (newMode === mode) return;
+    mode = newMode;
+    saveState();
+    renderControls();
+    renderScores();
+    startFresh();
+}
+
+function resetScores() {
+    scores[mode] = { X: 0, O: 0, draw: 0 };
+    saveState();
+    renderScores();
 }
 
 // -------------------------
 // Event Listeners
 // -------------------------
 cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+boardElement.addEventListener('keydown', handleBoardKeydown);
 restartButton.addEventListener('click', restartGame);
+resetScoresButton.addEventListener('click', resetScores);
+modeButtons.forEach(button => {
+    button.addEventListener('click', () => setMode(button.dataset.mode));
+});
+difficultySelect.addEventListener('change', () => {
+    difficulty = difficultySelect.value;
+    saveState();
+    startFresh();
+});
+document.addEventListener('keydown', event => {
+    // "R" starts a new round (ignored while typing in a control)
+    if ((event.key === 'r' || event.key === 'R') && !event.metaKey && !event.ctrlKey &&
+        event.target.tagName !== 'SELECT') {
+        restartGame();
+    }
+});
+
+// -------------------------
+// Init
+// -------------------------
+loadState();
+renderControls();
+renderScores();
+renderBoard();
+updateTurnMessage();
+renderTurnIndicator();
